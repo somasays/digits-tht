@@ -1,16 +1,9 @@
 {{ config(materialized='table', tags=['fleet']) }}
 
--- The only place a fleet payload is parsed, and a table rather than a view because of
--- it. As a view every downstream model and test re-ran from_json over the whole raw
--- table: at 50k records that is free, at 8.1M it was about ten re-parses and the build
--- stopped finishing. Materialising here parses once. Still no incremental machinery --
--- raw is append-only, so a rebuild is a rebuild. The valid and quarantine models filter this
--- one, so a rule can never mean two different things depending on which side reads it,
--- and the rejection rate has a single denominator.
+-- Parse once into a table so downstream models do not repeat from_json over the raw data.
+-- Valid and quarantine views share this classification and its rejection denominator.
 --
--- Fleet instants are authoritative UTC: the producer resolved civil time through the
--- pipeline's own resolver before publishing. Nothing here converts a zone, and a value
--- without an explicit Z is quarantined rather than guessed at.
+-- The producer supplies authoritative UTC. Values without an explicit Z are quarantined.
 
 with raw as (
     select
@@ -27,8 +20,7 @@ with raw as (
 parsed as (
     select
         *,
-        -- PERMISSIVE: a payload that is not JSON yields nulls rather than failing the
-        -- build, so the record survives to be quarantined with its bytes intact.
+        -- Invalid JSON yields nulls so the record can be quarantined instead of failing dbt.
         from_json(payload, '{{ var("fleet_event_schema") }}') as event
     from raw
 ),
@@ -61,8 +53,7 @@ classified as (
             when event.schema_version != '{{ var("fleet_schema_version") }}'
                 or event.event_type != '{{ var("fleet_event_type") }}'
                 then 'fleet.payload_unreadable'
-            -- passenger_count is absent on roughly a fifth of real rows and is not
-            -- required; a trip without one is still a trip.
+            -- passenger_count is optional because it is missing in valid source trips.
             when event.event_id is null or event.vehicle_id is null
                 or event.pickup_at_utc is null or event.dropoff_at_utc is null
                 or event.pickup_location_id is null or event.dropoff_location_id is null

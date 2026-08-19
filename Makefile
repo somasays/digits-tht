@@ -21,7 +21,7 @@ PIPELINE := uv run python -m pipeline.cli
         stage-weather notebook
 
 setup:
-	uv sync --extra dev
+	uv sync --python 3.11 --extra dev
 
 test:
 	uv run pytest

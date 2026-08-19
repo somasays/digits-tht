@@ -1,8 +1,6 @@
 {{ config(materialized='view', tags=['fleet']) }}
 
--- Records that could not be interpreted, kept whole with the rule that refused them.
--- The payload is the exact bytes Kafka carried, so a rejected record can be read back
--- and re-decided without going to the broker for it again.
+-- Keep rejected payloads and their rules for investigation or later reclassification.
 
 select
     quarantine_rule,

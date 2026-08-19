@@ -4,6 +4,18 @@ This project replays March and April 2025 NYC TLC trips through Kafka. A receipt
 responds on a vehicle-keyed topic, while Spark writes the same trip events to Delta for dbt
 to classify, model, test, and aggregate. NOAA weather remains a batch source.
 
+## Documentation
+
+- [`docs/submission_implementation.md`](docs/submission_implementation.md) explains the
+  requirements, implemented architecture, technology choices, reliability behavior, data
+  quality gates, model grains, measured results, and local execution evidence.
+- [`docs/production_promotion.md`](docs/production_promotion.md) describes the proposed
+  managed event backbone, Delta on GCS, BigQuery serving, retention, monitoring, recovery,
+  and production rollout.
+
+Start with the implementation document when reviewing the submitted solution. Use the
+production document for decisions that are proposed rather than implemented locally.
+
 ```text
 TLC trips → Kafka ┬→ receipt consumer → receipt topic
                   └→ Spark → Delta → dbt → trip facts and hourly activity
@@ -79,15 +91,3 @@ so the fast target is the normal review and development path.
 | [`tests/`](tests/) | Python, timestamp, event, receipt, acquisition, and Spark tests |
 | [`Makefile`](Makefile) | Reproducible local commands and end-to-end demonstration order |
 | [`config/config.yaml`](config/config.yaml) | Source periods, weather stations, timezone, and quality thresholds |
-
-## Documentation
-
-- [`docs/submission_implementation.md`](docs/submission_implementation.md) explains the
-  requirements, implemented architecture, technology choices, reliability behavior, data
-  quality gates, model grains, measured results, and local execution evidence.
-- [`docs/production_promotion.md`](docs/production_promotion.md) describes the proposed
-  managed event backbone, Delta on GCS, BigQuery serving, retention, monitoring, recovery,
-  and production rollout.
-
-Start with the implementation document when reviewing the submitted solution. Use the
-production document for decisions that are proposed rather than implemented locally.
