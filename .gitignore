@@ -1,0 +1,29 @@
+# Local configuration and secrets
+.env
+.env.*
+dbt/.user.yml
+dbt/.user.yaml
+dbt/user.yaml
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# dbt
+dbt/logs/
+dbt/target/
+dbt/dbt_packages/
+
+# Local Spark and pipeline state
+var/
+metastore_db/
+spark-warehouse/
+*.log
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

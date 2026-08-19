@@ -1,12 +1,6 @@
 {#
-  dbt-spark's session method substitutes seed values with
-  `dbt/adapters/spark/session.py::_fix_binding`, which wraps a string in single quotes
-  and escapes nothing. Four zone names contain an apostrophe -- Governor's Island,
-  Prince's Bay -- so the generated INSERT fails to parse and the seed, and everything
-  downstream of ref('taxi_zone_lookup'), never builds.
-
-  This inlines escaped literals instead of using binding characters. Delete it when a
-  dbt-spark release escapes its own bindings.
+  Escape seed literals because dbt-spark session bindings do not escape apostrophes in
+  taxi-zone names. Remove this override when dbt-spark handles them.
 #}
 
 {% macro spark_escape_literal(value) %}
@@ -15,8 +9,7 @@
     {%- elif value is number or value is boolean -%}
         {{ value }}
     {%- else -%}
-        {#- Backslash first: it is itself an escape character in Spark's default mode,
-            so doubling the quote before the backslash would re-escape the escape. -#}
+        {#- Escape backslashes before apostrophes because Spark treats them as escapes. -#}
         '{{ value | string | replace('\\', '\\\\') | replace("'", "''") }}'
     {%- endif -%}
 {% endmacro %}
