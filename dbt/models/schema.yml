@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: canonical_trip
+    description: >
+      One row per accepted staging trip, with business names, the borough's station, and
+      flags that describe a trip without discarding it.
+    columns:
+      - name: pickup_utc
+        description: Pickup instant in UTC.
+        tests: [not_null]
+      - name: pickup_utc_hour
+        description: Pickup hour, the grain weather is joined on.
+        tests: [not_null]
+      - name: is_movement_eligible
+        description: >
+          No implausible distance, duration or speed, and no negative total. The single
+          definition of the analysis population.
+        tests: [not_null]
+      - name: weather_station
+        description: Null for Staten Island, EWR and the unknown zones, which none represents.
+        tests:
+          - accepted_values:
+              arguments:
+                values: [central_park, laguardia, jfk]
+              config: {where: "weather_station is not null"}
+
+  - name: fact_trip_enriched
+    description: >
+      Trip grain with the pickup hour's weather. Row count must equal canonical_trip; any
+      difference is join fan-out.
+    columns:
+      - name: has_weather
+        description: An observation was found for this trip's station and hour.
+        tests: [not_null]
+      - name: precip_in
+        description: Inches in the pickup hour. Null means unmeasured, never zero.
+
+  - name: hourly_trip_activity
+    description: >
+      Trips, revenue and weather per station-hour, with separate denominators for all,
+      eligible and weather-matched trips.
+    columns:
+      - name: utc_hour
+        tests: [not_null]
+      - name: weather_station
+        tests: [not_null]
+      - name: trips
+        description: All trips starting in this station-hour, eligible or not.
+        tests: [not_null]
+      - name: precip_suspect
+        description: Flagged suspect at source; the value is retained.
+      - name: precip_bucket
+        description: dry, trace or measurable. Null where unread, which is not dry.
+        tests:
+          - accepted_values:
+              arguments:
+                values: [dry, trace, measurable]
+              config: {where: "precip_bucket is not null"}

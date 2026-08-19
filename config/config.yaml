@@ -1,0 +1,25 @@
+taxi:
+  civil_timezone: America/New_York
+
+weather:
+  stations:
+    central_park: "72505394728"
+    laguardia: "72503014732"
+    jfk: "74486094789"
+  fixed_utc_offset_hours: -5
+
+thresholds:
+  # Measured across the four 2025 files, then frozen: the worst legitimate straggler begins
+  # 0.133 days outside its month, the nearest gross violation 16 years. See design doc 21.4.
+  boundary_tolerance_days: 1
+  # Numerator: rows quarantined. Denominator: rows read from one period's file. Window: one
+  # source period, checked before that period is written. Measured 1.3e-7 across the four
+  # 2025 files (2 rows of 15,168,579); the bound is five orders of magnitude above that,
+  # because its job is to stop a corrupt file publishing, not to police the observed rate.
+  #
+  # The fleet path applies the same bound over a second window: one completed
+  # ingest_run_id, evaluated for every run rather than the latest, so a bad run cannot be
+  # masked by a good one after it. It is enforced by dbt/tests/fleet_rejected_fraction.sql,
+  # which restates the value because a dbt test cannot read this file -- the same reason
+  # weather_coverage.sql carries frozen literals. Design doc 11.1 holds both rows.
+  max_rejected_fraction: 0.01

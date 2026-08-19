@@ -1,0 +1,45 @@
+version: 2
+
+sources:
+  - name: staging
+    # No database key. dbt-spark forces database to None and then rejects a relation whose
+    # database is set, and Jinja renders None as the truthy string "None".
+    schema: "{{ target.schema }}"
+    description: >
+      Tables the pipeline publishes. Timestamps are resolved to UTC and uninterpretable rows
+      are already in quarantine.
+    tables:
+      - name: staging_weather_hour
+        description: >
+          One observation per station and UTC hour. precip_raw keeps the source text so a
+          trace, a blank and a measured zero stay distinguishable.
+        columns:
+          - name: utc_hour
+            description: Observation hour in UTC, converted from Local Standard Time.
+            tests: [not_null]
+          - name: station_key
+            description: central_park, laguardia or jfk.
+            tests: [not_null]
+          - name: precip_raw
+            description: Blank means unmeasured, T a trace, an "s" suffix a suspect value.
+          - name: precip_suspect
+            description: Flagged suspect at source; the value is retained.
+
+  - name: raw
+    schema: "{{ target.schema }}"
+    # Tagged so `dbt build --exclude tag:fleet` is a complete batch run: a clone that has
+    # never started Kafka has no raw table, and the batch models do not read one.
+    tags: ['fleet']
+    description: >
+      Kafka records as they arrived. The value is the exact payload bytes: unparsed,
+      unrepaired and not deduplicated, so any change of interpretation is a rebuild.
+    tables:
+      - name: raw_fleet_trip_event
+        description: One row per Kafka record from the completed-trip topic.
+        columns:
+          - name: offset
+            description: Kafka offset; unique with topic and partition.
+            tests: [not_null]
+          - name: ingest_run_id
+            description: Names one ingestion execution, never an event.
+            tests: [not_null]

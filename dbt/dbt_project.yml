@@ -1,0 +1,38 @@
+name: 'pipeline'
+version: '1.0.0'
+config-version: 2
+profile: 'pipeline'
+require-dbt-version: [">=1.10.0", "<2.0.0"]
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  # The fleet event contract, in one place. The producer writes it in Python and these
+  # models read it in SQL, so the version and type live where both can be compared
+  # against pipeline.fleet.
+  fleet_schema_version: '1'
+  fleet_event_type: 'trip.completed'
+  fleet_event_schema: >-
+    schema_version string, event_type string, event_id string,
+    vehicle_id string, vehicle_identity_type string, source string,
+    pickup_at_utc string, dropoff_at_utc string,
+    pickup_location_id int, dropoff_location_id int, passenger_count bigint,
+    trip_distance_miles double, fare_amount double, tip_amount double,
+    total_amount double, currency string, dst_shifted boolean,
+    dst_ambiguous boolean, boundary_straggler boolean,
+    source_period string, source_checksum string
+
+seeds:
+  pipeline:
+    taxi_zone_lookup:
+      +column_types:
+        LocationID: int

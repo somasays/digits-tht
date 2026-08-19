@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pipeline"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0,<7.0",
+    "requests>=2.34,<3.0",
+    "pyarrow>=25.0,<26.0",
+    "pypdl>=1.5,<2.0",
+    "pandas>=2.0,<4.0",
+]
+
+[project.scripts]
+pipeline = "pipeline.cli:main"
+
+[project.optional-dependencies]
+spark = [
+    "pyspark==3.5.9",
+    "delta-spark==3.2.1",
+]
+dbt = [
+    "dbt-core==1.12.0",
+    "dbt-spark==1.10.3",
+]
+# The receipt path must publish while Spark is stopped, so the Kafka client cannot be
+# Spark's. Pure Python, so there is no wheel to match against the interpreter.
+kafka = [
+    "kafka-python>=2.2,<3.0",
+]
+# Running the analysis notebook: a kernel to execute it in, a client to drive that
+# headlessly, and the plotting the two chart cells use.
+notebook = [
+    "ipykernel>=6.29,<7.0",
+    "nbclient>=0.10,<1.0",
+    "matplotlib>=3.8,<4.0",
+]
+dev = [
+    "pytest>=7.0,<9.0",
+    "responses>=0.25,<1.0",
+    "pipeline[notebook]",
+    "pipeline[spark]",
+    "pipeline[dbt]",
+    "pipeline[kafka]",
+]
+
+[tool.pytest.ini_options]
+markers = ["spark: needs a JVM; skipped when none is available"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
